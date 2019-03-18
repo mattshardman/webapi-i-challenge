@@ -1,84 +1,81 @@
 const db = require("./data/db");
 
-const insert = async (req, res) =>
-  db
-    .insert(req.body)
-    .then(result => {
-      res.status(201);
-      res.json(result);
-    })
-    .catch(() => {
-      res.status(501);
-      res.json({
-        error: "There was an error while saving the user to the database"
-      });
-    });
+const insert = async req => {
+  try {
+    const result = await db.insert(req.body);
+    return { status: 201, json: result };
+  } catch (e) {
+    const errorMessage = {
+      error: "There was an error while saving the user to the database."
+    };
+    return { status: 501, json: errorMessage };
+  }
+};
 
-const find = (req, res) =>
-  db
-    .find()
-    .then(result => {
-      res.status(200);
-      res.json(result);
-    })
-    .catch(() => {
-      res.status(500);
-      res.json({ error: "The users information could not be retrieved." });
-    });
+const find = async req => {
+  try {
+    const result = await db.find();
+    return { status: 200, json: result };
+  } catch (e) {
+    const errorMessage = {
+      error: "The users information could not be retrieved."
+    };
+    return { status: 500, json: errorMessage };
+  }
+};
 
-const findById = (req, res) =>
-  db
-    .findById(req.params.id)
-    .then(result => {
-      if (!result) {
-        res.status(404);
-        res.json({ error: "The user with the specified ID does not exist." });
-      }
+const findById = async req => {
+  try {
+    const result = await db.findById(req.params.id);
+    if (!result) {
+      const errorMessage = {
+        error: "The user with the specified ID does not exist."
+      };
+      return { status: 404, json: errorMessage };
+    }
+    return { status: 200, json: result };
+  } catch (e) {
+    const errorMessage = {
+      error: "The users information could not be retrieved."
+    };
+    return { status: 500, json: errorMessage };
+  }
+};
 
-      res.status(200);
-      res.json(result);
-    })
-    .catch(() => {
-      res.status(500);
-      res.json({ error: "The users information could not be retrieved." });
-    });
+const deleteOne = async req => {
+  try {
+    const result = await findById(req);
+    if (result.status === 404 || result.status === 500) {
+      return result;
+    }
+    await db.remove(req.params.id);
+    return result;
+  } catch (e) {
+    const errorMessage = {
+      error: "The users information could not be retrieved."
+    };
+    return { status: 500, json: errorMessage };
+  }
+};
 
-const deleteOne = (req, res) =>
-  db
-    .findById(req.params.id)
-    .then(result => {
-      if (!result) {
-        res.status(404);
-        res.json({ error: "The user with the specified ID does not exist." });
-      }
-      db.remove(req.params.id).then(() => {
-        res.status(200);
-        res.json(result);
-      });
-    })
-    .catch(() => {
-      res.status(500);
-      res.json({ error: "The users information could not be retrieved." });
-    });
-
-const update = (req, res) =>
-  db
-    .update(req.params.id, req.body)
-    .then(result => {
-      if (!result) {
-        res.status(404);
-        res.json({ error: "The user with the specified ID does not exist." });
-      }
-
-      db.findById(result).then(result => {
-        res.status(200);
-        res.json(result);
-      });
-    })
-    .catch(() => {
-      res.status(500);
-      res.json({ error: "The user information could not be modified." });
-    });
+const update = async req => {
+  try {
+    const result = await db.update(req.params.id, req.body);
+    if (!result) {
+      const errorMessage = {
+        error: "The user with the specified ID does not exist."
+      };
+      return { status: 404, json: errorMessage };
+    }
+    const updatedUser = await findById(req);
+    return updatedUser;
+  } catch (e) {
+    const errorMessage = {
+      error: "The user information could not be modified."
+    };
+    return { status: 500, json: errorMessage };
+  }
+};
 
 module.exports = {
   insert,
